@@ -1,0 +1,129 @@
+# IMPORT LIBRARIES
+import pandas as pd
+from pandas.io.json import json_normalize
+import json
+import networkx as nx
+
+
+# LIGHTNING FUNCTIONS
+
+# GET THE MAIN GRAPH
+def get_main_subgraph(G):
+    all_sub_G = list(nx.connected_component_subgraphs(G))
+    largest_sg = 0
+    for i, sg in enumerate(all_sub_G):
+        if sg.number_of_nodes() > largest_sg:
+            largest_sg = sg.number_of_nodes()
+            main_G = sg
+    return main_G
+
+
+# CONNECT TO SELECTED NODES
+def connect_to_new_neighbors(new_neighbors, channel_capacity_sats):
+    print("Connecting to the following nodes:\n\n")
+    node_alias=[]; num_channels=[]; ip_address=[]
+
+    for i in range(len(new_neighbors)):
+        nd = nodes_table[nodes_table['nodeid']==new_neighbors[i]]
+        node_alias.append(str(nd['alias']))
+        num_channels.append(len(list(G.neighbors(new_neighbors[i]))))
+        ip_address.append(list(nd['addresses'])[0][0]['address'])
+        print("node ID: "+new_neighbors[i])
+        print("node alias: "+node_alias[i])
+        print("number of channels: "+str(num_channels[i])+"\n")
+
+    for i in range(len(new_neighbors)):
+
+        print("Setting up payment channel with "+node_alias[i]+"\n");
+        connect = lightning_dir+"lightning-cli connect "+new_neighbors[i]+"@"+ip_address[i]
+        print(connect)
+        os.system(connect);
+
+        fund_channel = lightning_dir+"lightning-cli fundchannel "+new_neighbors[i]+" "+str(channel_capacity_sats)
+        print(fund_channel)
+        print("\n")
+        os.system(fund_channel);
+
+
+
+# DISPLAY NEW NEIGHBOR INFO
+def display_new_neighbors(G, new_neighbors):
+    print("Do you want to connect to the following nodes?\n\n")
+    node_alias=[]; num_channels=[]; ip_address=[]
+
+    for i in range(len(new_neighbors)):
+        nd = nodes_table[nodes_table['nodeid']==new_neighbors[i]]
+        node_alias.append(str(nd['alias']))
+        num_channels.append(len(list(G.neighbors(new_neighbors[i]))))
+        ip_address.append(list(nd['addresses'])[0][0]['address'])
+        print("node ID: "+new_neighbors[i])
+        print("node alias: "+node_alias[i])
+        print("number of channels: "+str(num_channels[i])+"\n")
+
+
+
+
+# GET DATA
+lightning_dir = "~/lightning/cli/"
+filename='demo_'
+
+save_dir = "> /Users/dariuscognac/Documents/GitHub/Lightning-Network-Topological-Analysis/"
+listnodes = lightning_dir + "lightning-cli listnodes" + save_dir + filename + "list_of_nodes.json"
+listchannels = lightning_dir + "lightning-cli listchannels" + save_dir + filename + "list_of_channels.json"
+getinfo = lightning_dir + "lightning-cli getinfo" + save_dir + filename + "info.json"
+
+os.system(listnodes);
+os.system(listchannels);
+os.system(getinfo);
+
+
+# LOAD AND FORMAT DATA
+nodes_temp = pd.read_json(filename + 'list_of_nodes.json')
+nodes_table = json_normalize(nodes_temp['nodes'])
+channels_temp = pd.read_json(filename + 'list_of_channels.json')
+channels_table = json_normalize(channels_temp['channels'])
+with open('demo_info.json') as json_data:
+    info = json.load(json_data)
+node_id = info['id']
+
+
+# MAKE GRAPH
+G = nx.Graph()
+G.add_nodes_from(nodes_table['nodeid'])
+edges_list = [(channels_table['source'][i], channels_table['destination'][i]) for i in range(len(channels_table))]
+G.add_edges_from(edges_list)
+
+G = get_main_subgraph(G)
+
+print('Number of nodes = ' + str(len(G.nodes())))
+print('Number of edges (payment channels) = ' + str(len(G.edges())))
+print('Your node ID: ' + node_id)
+
+
+
+# FUNCTIONS FOR PICKING NEIGHBORS
+
+
+def pick_highest_metric_nodes(G, centrality_measure, num_channels_to_make):
+    centrality_dict = get_centrality_dict(G, centrality_measure)
+    centrality_list = [(id, centrality_dict.get(id)) for id in centrality_dict]
+    sorted_by_second = sorted(centrality_list, key=lambda tup: tup[1], reverse=True) # Sort by betweenness centrality
+    return [id for id, val in sorted_by_second[0: (num_channels_to_make)]]
+
+
+def pick_poor_connected_nodes(G, min_degree, num_channels_to_make):
+    degree = get_centrality_dict(G, 'degree')
+    between_centrality = get_centrality_dict(G, 'betweenness')
+
+    min_degree_nodes = set()
+    for id, deg in degree.items():
+        if deg > min_degree:
+            min_degree_nodes.add(id)
+
+    bet_centrality = [(id, between_centrality.get(id)) for id in min_degree_nodes]
+    sorted_by_second = sorted(bet_centrality, key=lambda tup: tup[1]) # Sort by betweenness centrality
+    return [id for id, val in sorted_by_second[0: (num_channels_to_make)]]
+
+
+new_neighbors = pick_highest_metric_nodes(G, centrality_measure='betweenness', num_channels_to_make=2)
+# connect_to_new_neighbors(new_neighbors, channel_capacity_sats=20000)
