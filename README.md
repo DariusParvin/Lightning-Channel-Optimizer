@@ -15,3 +15,5 @@ The Lightning Channel Optimizer is a tool to help users find optimal nodes to co
   ### 3. Set up payment channels
   The tool produces the commands which are executed by the c-lightning command line interface to set up and fund the new payment channels.
 
+## Demo video
+https://youtu.be/-TmEcGeq7r8
