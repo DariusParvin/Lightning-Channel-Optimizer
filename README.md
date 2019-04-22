@@ -14,6 +14,9 @@ The Lightning Channel Optimizer is a tool to help users find well connected node
   It will suggest a pre-specified numner of nodes to connect to which will maximize either the user's closeness or betweenness, based on their preferences. The suggested payment channels are visualized, as well as the node's predicted measures of closeness and betweenness if they  were to go ahead and set up these payment channels.
   ### 3. Set up payment channels
   The tool produces the commands which are executed by the c-lightning command line interface to set up and fund the new payment channels.
+  
+## Example
+<img src="screen_shot.png" width="700"/>
 
 ## Demo video
 https://youtu.be/-TmEcGeq7r8
