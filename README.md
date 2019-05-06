@@ -18,8 +18,6 @@ The Lightning Channel Optimizer is a tool to help users find well connected node
 ## Example
 <img src="screen_shot.png" width="700"/>
 
-## Demo video
-https://youtu.be/-TmEcGeq7r8
+## [Demo video](https://youtu.be/-TmEcGeq7r8)
 
-## Presentation slides
-https://docs.google.com/presentation/d/1Qf7ViZ8pq5w_mWdkllIytp3D_btUA-TD2UpwQEDeqoc/edit?usp=sharing
+## [Presentation slides](https://docs.google.com/presentation/d/1Qf7ViZ8pq5w_mWdkllIytp3D_btUA-TD2UpwQEDeqoc/edit?usp=sharing)
